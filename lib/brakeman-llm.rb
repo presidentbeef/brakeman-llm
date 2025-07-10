@@ -132,8 +132,8 @@ module Brakeman
         llm = Brakeman::LLM.new(**llm_opts)
 
         # Suppress report output until after analysis
-        output_files = options.delete(:output_files)
         output_formats = get_output_formats(options)
+        output_files = options.delete(:output_files)
         options.delete(:output_format)
         print_report = options.delete(:print_report)
 
@@ -169,6 +169,7 @@ module Brakeman
         # Move message to end of the warning output for text report
         # because LLMs can be quite wordy
         tracker.options[:text_fields] ||= [:confidence, :category, :check, :code, :file, :line, :message]
+        tracker.options[:output_formats] = output_formats
 
         if output_files
           notify "Generating report..."
