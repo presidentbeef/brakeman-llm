@@ -25,6 +25,8 @@ module Brakeman
 
     # Configure RubyLLM
     def initialize(model:, provider:, instructions: nil, prompt: nil, **kwargs)
+      @llm.log_level = :error
+
       @llm = RubyLLM.context do |config|
         kwargs.each do |k, v|
 
@@ -37,7 +39,6 @@ module Brakeman
         end
       end
 
-      RubyLLM.logger.level = Logger::ERROR
 
       @instructions = instructions || 'You are a world-class application security expert with deep expertise in Ruby and Ruby on Rails security.'
 
