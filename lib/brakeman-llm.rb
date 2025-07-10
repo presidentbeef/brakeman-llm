@@ -61,7 +61,7 @@ module Brakeman
       response = chat.ask <<~INPUT
         #{@prompt}
 
-        The follow is a Brakeman security warning in JSON format that describes a potential security vulnerability:
+        The following is a Brakeman security warning in JSON format that describes a potential security vulnerability:
         #{warning.to_json}
       INPUT
 
