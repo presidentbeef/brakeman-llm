@@ -39,7 +39,7 @@ module Brakeman
 
       RubyLLM.logger.level = Logger::ERROR
 
-      instructions ||= 'You are a world-class application security expert with deep expertise in Ruby and Ruby on Rails security.'
+      @instructions = instructions || 'You are a world-class application security expert with deep expertise in Ruby and Ruby on Rails security.'
 
       @prompt = prompt || <<~PROMPT
         Analyze the following security warning resulting from analyzing a Ruby on Rails application with the static analysis security tool Brakeman.
@@ -47,14 +47,17 @@ module Brakeman
         Ignore 'fingerprint' and 'warning_code' fields and do not explain them.
       PROMPT
 
-      @chat = @llm.chat(model: model, provider: provider)
-      @chat.with_instructions(instructions)
+      @model = model
+      @provider = provider
     end
 
     # Analyze single Brakeman warning.
     # Results analysis as a string.
     def analyze_warning(warning)
-      response = @chat.ask <<~INPUT
+      chat = @llm.chat(model: @model, provider: @provider)
+      chat.with_instructions(@instructions)
+
+      response = chat.ask <<~INPUT
         #{@prompt}
 
         The follow is a Brakeman security warning in JSON format that describes a potential security vulnerability:
