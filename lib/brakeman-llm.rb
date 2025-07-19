@@ -58,14 +58,30 @@ module Brakeman
       chat = @llm.chat(model: @model, provider: @provider)
       chat.with_instructions(@instructions)
 
-      response = chat.ask <<~INPUT
+      llm_input = <<~INPUT
         #{@prompt}
+        #{help_doc(warning)}
 
         The following is a Brakeman security warning in JSON format that describes a potential security vulnerability:
         #{warning.to_json}
       INPUT
 
+      response = chat.ask llm_input
+
       response.content
+    end
+
+    def help_doc(warning)
+      if warning.link.match %r{https://brakemanscanner.org/(.+)/}
+        doc = File.join(__dir__, '..', $1, "index.markdown")
+
+        if File.exist? doc
+          content = File.read doc
+          "Here is background information about this type of vulnerability: #{content}"
+        else
+          puts "No file: #{doc}"
+        end
+      end
     end
   end
 
