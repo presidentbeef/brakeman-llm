@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.description = 'Brakeman detects security vulnerabilities in Ruby on Rails applications via static analysis.'
 
   s.executables = 'brakeman-llm'
-  s.files = ['brakeman-llm', 'brakeman-llm.rb']
+  s.files = ['bin/brakeman-llm', 'lib/brakeman-llm.rb']
   s.license = 'MIT'
   s.required_ruby_version = '>= 3.1.0'
 
