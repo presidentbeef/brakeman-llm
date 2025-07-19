@@ -25,11 +25,8 @@ module Brakeman
 
     # Configure RubyLLM
     def initialize(model:, provider:, instructions: nil, prompt: nil, **kwargs)
-      @llm.log_level = :error
-
       @llm = RubyLLM.context do |config|
         kwargs.each do |k, v|
-
           case k
           when :api_key, :api_base
             config.send("#{provider}_#{k}=", v)
@@ -37,8 +34,11 @@ module Brakeman
             config.send("#{k}=", v)
           end
         end
+
+        config.log_level = :error unless kwargs.key? :log_level
       end
 
+      RubyLLM.logger.level = Logger::DEBUG
 
       @instructions = instructions || 'You are a world-class application security expert with deep expertise in Ruby and Ruby on Rails security.'
 
@@ -129,7 +129,6 @@ module Brakeman
         end
 
         llm_opts = options.delete(:llm)
-        llm = Brakeman::LLM.new(**llm_opts)
 
         # Suppress report output until after analysis
         output_formats = get_output_formats(options)
@@ -138,6 +137,9 @@ module Brakeman
         print_report = options.delete(:print_report)
 
         tracker = old_run(options)
+
+        llm_opts[:log_level] = :debug if @debug
+        llm = Brakeman::LLM.new(**llm_opts)
 
         set_analysis = output_formats.include? :to_json
 
