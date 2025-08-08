@@ -38,7 +38,7 @@ module Brakeman
         config.log_level = :error unless kwargs.key? :log_level
       end
 
-      RubyLLM.logger.level = Logger::DEBUG
+      RubyLLM.logger.level = Logger::ERROR if @llm.config.log_level == :error
 
       @instructions = instructions || 'You are a world-class application security expert with deep expertise in Ruby and Ruby on Rails security.'
 
