@@ -45,6 +45,8 @@ module Brakeman
       @prompt = prompt || <<~PROMPT
         Analyze the following security warning resulting from analyzing a Ruby on Rails application with the static analysis security tool Brakeman.
         Explain the security vulnerability and potential fixes. Jump straight into the explanation, do not have a casual introduction.
+        Do not ask follow-up questions, as this is not an interactive prompt.
+        Keep the explanation to less than 400 words.
         Ignore 'fingerprint' and 'warning_code' fields and do not explain them.
       PROMPT
 
