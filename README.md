@@ -60,6 +60,26 @@ llm:
   request_timeout: 300  
 ```
 
+### Unsupported Providers
+
+To use an OpenAI-compatible provider that RubyLLM does not natively support, set the provider to `openai` and set `assume_model_exists`.
+
+It may also be necessary to set `use_system_role` if the provider is using `system` instead of `developer`.
+
+For example:
+
+```yaml
+llm:
+  api_key: syn_api_key
+  api_base: https://api.synthetic.new/v1
+  provider: openai
+  model: hf:zai-org/GLM-4.5
+  assume_model_exists: true
+  use_system_role: true
+```
+
+See the [RubyLLM documentation](https://rubyllm.com/configuration/#custom-endpoints) for more information.
+
 ## Example Warning Enhancement
 
 *Before*
