@@ -22,11 +22,11 @@ module Brakeman
 
   # Simple wrapper for RubyLLM
   class LLM
-    attr_accessor :instructions, :model, :prompt, :provider
+    attr_accessor :assume_model_exists, :instructions, :model, :prompt, :provider
     attr_reader :llm
 
     # Configure RubyLLM
-    def initialize(model:, provider:, instructions: nil, prompt: nil, **kwargs)
+    def initialize(model:, provider:, instructions: nil, prompt: nil, assume_model_exists: false, **kwargs)
       @llm = RubyLLM.context do |config|
         kwargs.each do |k, v|
           case k
@@ -54,12 +54,13 @@ module Brakeman
 
       @model = model
       @provider = provider
+      @assume_model_exists = assume_model_exists
     end
 
     # Analyze single Brakeman warning.
     # Results analysis as a string.
     def analyze_warning(warning)
-      chat = @llm.chat(model: @model, provider: @provider)
+      chat = @llm.chat(model: @model, provider: @provider, assume_model_exists: @assume_model_exists)
       chat.with_instructions(@instructions)
 
       llm_input = <<~INPUT
