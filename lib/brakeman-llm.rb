@@ -77,7 +77,7 @@ module Brakeman
     end
 
     def help_doc(warning)
-      if warning.link.match %r{https://brakemanscanner.org/(.+)/}
+      if warning.link.match %r{https://brakemanscanner.org/(.+)}
         doc = File.join(__dir__, '..', $1, "index.markdown")
 
         if File.exist? doc
