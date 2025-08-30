@@ -19,5 +19,5 @@ Gem::Specification.new do |s|
   }
 
   s.add_dependency('brakeman', '>= 7.0')
-  s.add_dependency('ruby_llm', '~> 1.3')
+  s.add_dependency('ruby_llm', '>= 1.6', '<= 2.0')
 end
