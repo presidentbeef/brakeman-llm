@@ -1,0 +1,8 @@
+---
+:llm:
+  :api_key: syn_api_key
+  :api_base: https://api.synthetic.new/v1
+  :provider: openai
+  :model: hf:zai-org/GLM-4.5
+  :assume_model_exists: true
+  :use_system_role: true
