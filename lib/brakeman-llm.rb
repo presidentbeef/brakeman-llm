@@ -22,6 +22,8 @@ module Brakeman
 
   # Simple wrapper for RubyLLM
   class LLM
+    attr_accessor :instructions, :model, :prompt, :provider
+    attr_reader :llm
 
     # Configure RubyLLM
     def initialize(model:, provider:, instructions: nil, prompt: nil, **kwargs)
@@ -146,7 +148,7 @@ module Brakeman
           disclaimer = false
         end
 
-        llm_opts = options.delete(:llm)
+        llm_opts = options.delete(:llm) || {}
 
         # Suppress report output until after analysis
         output_formats = get_output_formats(options)
@@ -154,10 +156,12 @@ module Brakeman
         options.delete(:output_format)
         print_report = options.delete(:print_report)
 
+        # Actually run scan
         tracker = old_run(options)
 
+        # Set up LLM
         llm_opts[:log_level] = :debug if @debug
-        llm = Brakeman::LLM.new(**llm_opts)
+        llm = llm_opts.delete(:llm) || Brakeman::LLM.new(**llm_opts)
 
         set_analysis = output_formats.include? :to_json
 
@@ -166,6 +170,7 @@ module Brakeman
         warnings = tracker.warnings
         total = warnings.length
 
+        # Update warnings with LLM analysis
         warnings.each_with_index do |warning, index|
           unless @quiet or options[:report_progress] == false
             $stderr.print " #{index}/#{total} warnings processed\r"
