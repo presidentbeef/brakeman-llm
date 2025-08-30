@@ -30,7 +30,7 @@ module Brakeman
       @llm = RubyLLM.context do |config|
         kwargs.each do |k, v|
           case k
-          when :api_key, :api_base
+          when :api_key, :api_base, :use_system_role
             config.send("#{provider}_#{k}=", v)
           else
             config.send("#{k}=", v)
