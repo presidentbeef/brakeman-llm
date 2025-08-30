@@ -49,6 +49,7 @@ Additional configuration options:
 
 * `prompt` - Set the prompt sent to the LLM for each warning. The Brakeman warning will always be appended as JSON.
 * `instructions` - Override the instructions for the LLM. See [RubyLLM Instructions](https://rubyllm.com/guides/chat#guiding-the-ai-with-instructions) for details.
+* `disclaimer` - Override the default disclaimer that is appended to generated messages. Set to `none` to disable.
 
 All other keys under `llm` will be sent directly to the RubyLLM library. See [RubyLLM Configuration](https://rubyllm.com/configuration) for more.
 

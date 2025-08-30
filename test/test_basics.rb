@@ -95,4 +95,66 @@ class BrakemanLLMTest < Minitest::Test
     assert bm_llm.assume_model_exists
     assert bm_llm.llm.config.openai_use_system_role
   end
+
+  def test_disclaimer
+    bm_llm = Brakeman::LLM.new(model: 'test_model', provider: 'test_provider')
+    instructions = bm_llm.instructions
+    analysis = 'Extended warning description'
+    disclaimer = 'LLMs can be wrong'
+    tracker = nil
+
+    response_mock = Minitest::Mock.new
+    response_mock.expect(:content, analysis.dup)
+    response_mock.expect(:content, analysis.dup)
+
+    chat_mock = Minitest::Mock.new
+
+    2.times do
+      chat_mock.expect(:with_instructions, nil, [instructions])
+      chat_mock.expect(:ask, response_mock, [String])
+    end
+
+    bm_llm.llm.stub(:chat, chat_mock) do
+      tracker = Brakeman.run(llm: { llm: bm_llm, disclaimer: disclaimer }, app_path: rails_app)
+    end
+
+    # Check that the warnings have the disclaimer attached
+    tracker.warnings.each do |w|
+      assert_includes w.message.to_s, disclaimer 
+    end
+
+    chat_mock.verify
+    response_mock.verify
+  end
+
+  def test_disclaimer_in_json
+    bm_llm = Brakeman::LLM.new(model: 'test_model', provider: 'test_provider')
+    instructions = bm_llm.instructions
+    analysis = 'Extended warning description'
+    disclaimer = 'LLMs can be wrong'
+    tracker = nil
+
+    response_mock = Minitest::Mock.new
+    response_mock.expect(:content, analysis.dup)
+    response_mock.expect(:content, analysis.dup)
+
+    chat_mock = Minitest::Mock.new
+
+    2.times do
+      chat_mock.expect(:with_instructions, nil, [instructions])
+      chat_mock.expect(:ask, response_mock, [String])
+    end
+
+    bm_llm.llm.stub(:chat, chat_mock) do
+      tracker = Brakeman.run(llm: { llm: bm_llm, disclaimer: disclaimer }, app_path: rails_app, output_format: :json)
+    end
+
+    # Check that the warnings have the disclaimer attached
+    tracker.warnings.each do |w|
+      assert_includes w.llm_analysis, disclaimer
+    end
+
+    chat_mock.verify
+    response_mock.verify
+  end
 end
