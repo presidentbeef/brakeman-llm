@@ -4,6 +4,10 @@ require 'brakeman/commandline'
 
 
 class BrakemanLLMTest < Minitest::Test
+  def rails_app(id = 1)
+    File.join(__dir__, 'fixtures', "rails_app_#{id}")
+  end
+
   def test_the_basics
     bm_llm = Brakeman::LLM.new(model: 'test_model', provider: 'test_provider')
 
@@ -38,7 +42,7 @@ class BrakemanLLMTest < Minitest::Test
     end
 
     bm_llm.llm.stub(:chat, chat_mock) do
-      tracker = Brakeman.run(llm: { llm: bm_llm }, app_path: File.join(__dir__, 'fixtures', 'app'), output_format: :json)
+      tracker = Brakeman.run(llm: { llm: bm_llm }, app_path: rails_app, output_format: :json)
     end
 
     # Check that the warnings have the analysis attached
@@ -50,5 +54,45 @@ class BrakemanLLMTest < Minitest::Test
 
     chat_mock.verify
     response_mock.verify
+  end
+
+  def test_load_config
+    options = {
+      app_path: rails_app(2)
+    }
+
+    Brakeman.ensure_llm_options(options)
+
+    assert options[:llm]
+    assert options[:llm][:api_key]
+    assert options[:llm][:api_base]
+    assert options[:llm][:provider]
+    assert options[:llm][:model]
+  end
+
+  def test_no_config
+    assert_raises do
+      Brakeman.run(app_path: rails_app)
+    end
+  end
+
+  def test_llm_options_from_config
+    options = {
+      app_path: rails_app(2)
+    }
+
+    Brakeman.ensure_llm_options(options)
+
+    llm_opts = options[:llm]
+    bm_llm = Brakeman::LLM.new(**llm_opts)
+
+    assert_equal llm_opts[:provider], bm_llm.provider
+    assert_equal llm_opts[:model], bm_llm.model
+
+    assert_equal llm_opts[:api_key], bm_llm.llm.config.openai_api_key
+    assert_equal llm_opts[:api_base], bm_llm.llm.config.openai_api_base
+
+    assert bm_llm.assume_model_exists
+    assert bm_llm.llm.config.openai_use_system_role
   end
 end

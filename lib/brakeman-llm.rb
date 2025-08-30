@@ -22,15 +22,15 @@ module Brakeman
 
   # Simple wrapper for RubyLLM
   class LLM
-    attr_accessor :instructions, :model, :prompt, :provider
+    attr_accessor :assume_model_exists, :instructions, :model, :prompt, :provider
     attr_reader :llm
 
     # Configure RubyLLM
-    def initialize(model:, provider:, instructions: nil, prompt: nil, **kwargs)
+    def initialize(model:, provider:, instructions: nil, prompt: nil, assume_model_exists: false, **kwargs)
       @llm = RubyLLM.context do |config|
         kwargs.each do |k, v|
           case k
-          when :api_key, :api_base
+          when :api_key, :api_base, :use_system_role
             config.send("#{provider}_#{k}=", v)
           else
             config.send("#{k}=", v)
@@ -54,12 +54,13 @@ module Brakeman
 
       @model = model
       @provider = provider
+      @assume_model_exists = assume_model_exists
     end
 
     # Analyze single Brakeman warning.
     # Results analysis as a string.
     def analyze_warning(warning)
-      chat = @llm.chat(model: @model, provider: @provider)
+      chat = @llm.chat(model: @model, provider: @provider, assume_model_exists: @assume_model_exists)
       chat.with_instructions(@instructions)
 
       llm_input = <<~INPUT
@@ -140,76 +141,86 @@ module Brakeman
   class << self
     alias old_run run
 
-    def run(options)
-      if options[:llm]
+    def ensure_llm_options(options)
+      return if options[:llm]
 
-        disclaimer = options[:llm].delete(:disclaimer) || '(The above message is auto-generated and may contain errors.)'
-        if disclaimer == :none
-          disclaimer = false
-        end
+      # Check config file, but only grab LLM options
+      config_options = self.load_options(options)
 
-        llm_opts = options.delete(:llm) || {}
-
-        # Suppress report output until after analysis
-        output_formats = get_output_formats(options)
-        output_files = options.delete(:output_files)
-        options.delete(:output_format)
-        print_report = options.delete(:print_report)
-
-        # Actually run scan
-        tracker = old_run(options)
-
-        # Set up LLM
-        llm_opts[:log_level] = :debug if @debug
-        llm = llm_opts.delete(:llm) || Brakeman::LLM.new(**llm_opts)
-
-        set_analysis = output_formats.include? :to_json
-
-        notify 'Asking LLM for extended descriptions...'
-
-        warnings = tracker.warnings
-        total = warnings.length
-
-        # Update warnings with LLM analysis
-        warnings.each_with_index do |warning, index|
-          unless @quiet or options[:report_progress] == false
-            $stderr.print " #{index}/#{total} warnings processed\r"
-          end
-
-          if set_analysis
-            warning.llm_analysis = llm.analyze_warning(warning)
-
-            if disclaimer
-              warning.llm_analysis << "\n\n" << disclaimer
-            end
-          else
-            warning.message << "\n\n" << llm.analyze_warning(warning)
-
-            if disclaimer
-              warning.message << "\n\n" << disclaimer
-            end
-          end
-        end
-
-        # Move message to end of the warning output for text report
-        # because LLMs can be quite wordy
-        tracker.options[:text_fields] ||= [:confidence, :category, :check, :code, :file, :line, :message]
-        tracker.options[:output_formats] = output_formats
-
-        if output_files
-          notify "Generating report..."
-
-          write_report_to_files tracker, output_files
-        elsif print_report
-          notify "Generating report..."
-
-          write_report_to_formats tracker, output_formats
-        end
-
-        tracker
+      if config_options[:llm]
+        options[:llm] = config_options[:llm]
       else
         raise 'Missing LLM configuration'
       end
+    end
+
+    def run(options)
+      ensure_llm_options(options)
+
+      # Suppress report output until after analysis
+      output_formats = get_output_formats(options)
+      output_files = options.delete(:output_files)
+      options.delete(:output_format)
+      print_report = options.delete(:print_report)
+
+      # Actually run scan
+      tracker = old_run(options)
+
+      # Set up LLM
+      llm_opts = options.delete(:llm) || {}
+
+      disclaimer = llm_opts.delete(:disclaimer) || '(The above message is auto-generated and may contain errors.)'
+      if disclaimer == :none
+        disclaimer = false
+      end
+
+      llm_opts[:log_level] = :debug if @debug
+      llm = llm_opts.delete(:llm) || Brakeman::LLM.new(**llm_opts)
+
+      set_analysis = output_formats.include? :to_json
+
+      notify 'Asking LLM for extended descriptions...'
+
+      warnings = tracker.warnings
+      total = warnings.length
+
+      # Update warnings with LLM analysis
+      warnings.each_with_index do |warning, index|
+        unless @quiet or options[:report_progress] == false
+          $stderr.print " #{index}/#{total} warnings processed\r"
+        end
+
+        if set_analysis
+          warning.llm_analysis = llm.analyze_warning(warning)
+
+          if disclaimer
+            warning.llm_analysis << "\n\n" << disclaimer
+          end
+        else
+          warning.message << "\n\n" << llm.analyze_warning(warning)
+
+          if disclaimer
+            warning.message << "\n\n" << disclaimer
+          end
+        end
+      end
+
+      # Move message to end of the warning output for text report
+      # because LLMs can be quite wordy
+      tracker.options[:text_fields] ||= [:confidence, :category, :check, :code, :file, :line, :message]
+      tracker.options[:output_formats] = output_formats
+
+      if output_files
+        notify "Generating report..."
+
+        write_report_to_files tracker, output_files
+      elsif print_report
+        notify "Generating report..."
+
+        write_report_to_formats tracker, output_formats
+      end
+
+      tracker
     end
   end
 end
