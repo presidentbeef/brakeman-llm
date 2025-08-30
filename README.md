@@ -1,65 +1,10 @@
 # LLM Sprinkles for Brakeman
 
-This library adds LLM-based descriptions to Brakeman warnings using the [RubyLLM library](https://rubyllm.com/).
+Currently, this library adds LLM-based descriptions to Brakeman warnings using the [RubyLLM library](https://rubyllm.com/).
+
+It may do more interesting things in the future.
 
 You will need to connect it up to an LLM provider (Ollama, Anthropic, etc).
-
-## Example
-
-*Before*
-
-```
-Confidence: High
-Category: Weak Cryptography
-Check: WeakRSAKey
-Message: Use of padding mode PKCS1 (default if not specified), which is known to be insecure. Use OAEP instead
-Code: OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json)
-File: lib/some_lib.rb
-Line: 4
-
-```
-
-*After*
-
-```
-Confidence: High
-Category: Weak Cryptography
-Check: WeakRSAKey
-Code: OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json)
-File: lib/some_lib.rb
-Line: 4
-Message: Use of padding mode PKCS1 (default if not specified), which is known to be insecure. Use OAEP instead
-
-The Brakeman security warning identifies a Weak Cryptography vulnerability in the Ruby on Rails application. Specifically, it points out the use of an insecure padding mode (PKCS1) in RSA encryption.
-
-The vulnerability occurs in the file "lib/some_lib.rb" on line 4, within the SomeLib class's some_rsa_encrypting method. The code in question is using OpenSSL::PKey::RSA to perform public key encryption on a JSON payload.
-
-The main issue is that the encryption is using the default padding mode, which is PKCS1. This padding scheme is known to be vulnerable to certain types of attacks, particularly padding oracle attacks. These attacks can potentially allow an attacker to decrypt the encrypted data or even recover the private key in some scenarios.
-
-To address this vulnerability, the recommendation is to use OAEP (Optimal Asymmetric Encryption Padding) instead of PKCS1. OAEP is a more secure padding scheme that is resistant to the vulnerabilities associated with PKCS1.
-
-To fix this issue:
-
-1. Update the encryption code to explicitly use OAEP padding. In Ruby, this can be done by passing the appropriate option to the public_encrypt method:
-
-   ```ruby
-   OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json, OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING)
-   ```
-
-2. Ensure that the corresponding decryption code also uses OAEP padding:
-
-   ```ruby
-   private_key.private_decrypt(encrypted_data, OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING)
-   ```
-
-3. Review all instances of RSA encryption in the codebase to ensure consistent use of secure padding schemes.
-
-4. Consider using higher-level cryptographic libraries or gems that implement secure defaults and best practices, reducing the risk of such vulnerabilities.
-
-By implementing these changes, the application will use a more secure padding scheme for RSA encryption, significantly reducing the risk of attacks exploiting weaknesses in the PKCS1 padding mode.
-
-(The above message is auto-generated and may contain errors.)
-```
 
 ## Installation
 
@@ -114,6 +59,59 @@ For example:
 llm:
   request_timeout: 300  
 ```
+
+## Example Warning Enhancement
+
+*Before*
+
+    Confidence: High
+    Category: Weak Cryptography
+    Check: WeakRSAKey
+    Message: Use of padding mode PKCS1 (default if not specified), which is known to be insecure. Use OAEP instead
+    Code: OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json)
+    File: lib/some_lib.rb
+    Line: 4
+
+
+*After*
+
+    Confidence: High
+    Category: Weak Cryptography
+    Check: WeakRSAKey
+    Code: OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json)
+    File: lib/some_lib.rb
+    Line: 4
+    Message: Use of padding mode PKCS1 (default if not specified), which is known to be insecure. Use OAEP instead
+
+    The Brakeman security warning identifies a Weak Cryptography vulnerability in the Ruby on Rails application. Specifically, it points out the use of an insecure padding mode (PKCS1) in RSA encryption.
+
+    The vulnerability occurs in the file "lib/some_lib.rb" on line 4, within the SomeLib class's some_rsa_encrypting method. The code in question is using OpenSSL::PKey::RSA to perform public key encryption on a JSON payload.
+
+    The main issue is that the encryption is using the default padding mode, which is PKCS1. This padding scheme is known to be vulnerable to certain types of attacks, particularly padding oracle attacks. These attacks can potentially allow an attacker to decrypt the encrypted data or even recover the private key in some scenarios.
+
+    To address this vulnerability, the recommendation is to use OAEP (Optimal Asymmetric Encryption Padding) instead of PKCS1. OAEP is a more secure padding scheme that is resistant to the vulnerabilities associated with PKCS1.
+
+    To fix this issue:
+
+    1. Update the encryption code to explicitly use OAEP padding. In Ruby, this can be done by passing the appropriate option to the public_encrypt method:
+
+       ```ruby
+       OpenSSL::PKey::RSA.new("grab the public 4096 bit key").public_encrypt(payload.to_json, OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING)
+       ```
+
+    2. Ensure that the corresponding decryption code also uses OAEP padding:
+
+       ```ruby
+       private_key.private_decrypt(encrypted_data, OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING)
+       ```
+
+    3. Review all instances of RSA encryption in the codebase to ensure consistent use of secure padding schemes.
+
+    4. Consider using higher-level cryptographic libraries or gems that implement secure defaults and best practices, reducing the risk of such vulnerabilities.
+
+    By implementing these changes, the application will use a more secure padding scheme for RSA encryption, significantly reducing the risk of attacks exploiting weaknesses in the PKCS1 padding mode.
+
+    (The above message is auto-generated and may contain errors.)
 
 ## Limitations
 
