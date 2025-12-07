@@ -157,4 +157,20 @@ class BrakemanLLMTest < Minitest::Test
     chat_mock.verify
     response_mock.verify
   end
+
+  def test_error_during_analysis
+    bm_llm = Brakeman::LLM.new(model: 'test_model', provider: 'test_provider')
+    analysis = 'Extended warning description'
+    tracker = nil
+
+    chat_mock = -> (_) { raise RubyLLM::Error }
+
+    bm_llm.llm.stub(:chat, chat_mock) do
+      tracker = Brakeman.run(llm: { llm: bm_llm }, app_path: rails_app, output_format: :json)
+    end
+
+    tracker.warnings.each do |w|
+      assert_nil w.llm_analysis
+    end
+  end
 end
