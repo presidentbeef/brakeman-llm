@@ -190,18 +190,22 @@ module Brakeman
           $stderr.print " #{index}/#{total} warnings processed\r"
         end
 
-        if set_analysis
-          warning.llm_analysis = llm.analyze_warning(warning)
+        begin
+          if set_analysis
+            warning.llm_analysis = llm.analyze_warning(warning)
 
-          if disclaimer
-            warning.llm_analysis << "\n\n" << disclaimer
-          end
-        else
-          warning.message << "\n\n" << llm.analyze_warning(warning)
+            if disclaimer
+              warning.llm_analysis << "\n\n" << disclaimer
+            end
+          else
+            warning.message << "\n\n" << llm.analyze_warning(warning)
 
-          if disclaimer
-            warning.message << "\n\n" << disclaimer
+            if disclaimer
+              warning.message << "\n\n" << disclaimer
+            end
           end
+        rescue RubyLLM::Error => e
+          Brakeman.notify "Failed to analyze warning (#{warning.fingerprint}): #{e}"
         end
       end
 
